@@ -152,7 +152,7 @@ s = 2
 n_interation = 1000
 max_simulation = 40
 
-for m in range(13, m_max + 1):
+for m in range(2, m_max + 1):
     print("Memory: ", m)
     result = pd.DataFrame(columns=[
         'Simulation', 'Iteration', 'Population', 'LenMemory',
@@ -162,11 +162,11 @@ for m in range(13, m_max + 1):
     for simulation in range(max_simulation):
         print('Simulation: ', simulation)
         memory = generete_memory(m)
-        population = generate_population(N, s, m)
         table = table_strategy(m)
         puntuacion = np.zeros(N)
 
         for interation in range(n_interation):
+            population = generate_population(N, s, m)
             group_select = select_group(m, memory, population, table)
             win_group = group_minoritary(group_select)
             puntuacion = update_puntuacion(win_group, puntuacion)
@@ -187,12 +187,12 @@ for m in range(13, m_max + 1):
                 )
 
         result.to_csv(
-            './Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv',
+            './result_NuevasEstrategias//Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv',
             index=False)
         pd.DataFrame(puntuacion).to_csv(
-            './Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv',
+            './result_NuevasEstrategias//Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv',
             index=False)
 
-    result.to_csv('./Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv', index=False)
-    pd.DataFrame(puntuacion).to_csv('./Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv', index=False)
+    result.to_csv('./result_NuevasEstrategias//Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv', index=False)
+    pd.DataFrame(puntuacion).to_csv('./result_NuevasEstrategias//Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv', index=False)
 

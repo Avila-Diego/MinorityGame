@@ -1,9 +1,10 @@
-rm(list <- ls()); gc()
+# rm(list <- ls()); gc()
 
 library(readr)
 library(dplyr)
 
 setwd("~/Documents/Tesis/Code/GameMinority/Result")
+# setwd("~/Documents/Tesis/Code/GameMinority/result_NuevasEstrategias")
 
 files_puntuation <- list.files(pattern = "_puntuation")
 files_summary <- list.files(pattern = "\\d\\.csv")
@@ -17,12 +18,28 @@ for (file in files_summary) {
 tmp <- NULL
 gc()
 
+data_summmary$sum_ones <- ifelse(
+  data_summmary$MinorityGroup == 1,
+  data_summmary$n_wins,
+  101 - data_summmary$n_wins
+)
+
+# result <- data_summmary %>%
+#   select(LenMemory, Simulation, n_wins) %>%
+#   group_by(LenMemory, Simulation) %>%
+#   summarize(
+#     m = mean(n_wins, na.rm = TRUE),
+#     sd = sd(n_wins)
+#   )
+
+# plot(result$LenMemory, result$sd)
+
 result <- data_summmary %>%
-  select(LenMemory, Simulation, n_wins) %>%
+  select(LenMemory, Simulation, sum_ones) %>%
   group_by(LenMemory, Simulation) %>%
   summarize(
-    m = mean(n_wins, na.rm = TRUE),
-    sd = sd(n_wins)
+    m = mean(sum_ones, na.rm = TRUE),
+    sd = sd(sum_ones)
   )
 
 plot(result$LenMemory, result$sd)
