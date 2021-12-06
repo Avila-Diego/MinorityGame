@@ -26,13 +26,6 @@ def generate_population(N, s, m):
     else:
         return np.random.randint(2, size=(N, s, 2**m))
 
-def generete_memory(m):
-    """
-    Generate a memory of size 2*m
-    A vector of size 2*m is generated with 0 and 1 randomly.
-    """
-    return np.random.randint(2, size=2*m)
-
 def product(*args, repeat=1):
     """
     Extracted from the library: itertools
@@ -52,56 +45,39 @@ def table_strategy(m):
     table = list(product([0,1], repeat=m))
     return table
 
-def memory_last_time(memory, m, time):
-    """
-    Returns the last m elements of the memory element with a
-    time delay.
-    """
-    if time == 0:
-        return memory[-m:]
-    else:
-        return memory[-m-time:-time]
 
-def position_straegy(table, tmp_memory, m, time):
+def position_straegy(table, memory):
     """
     Position a strategy in the table.
     """
-    for i in range(len(table)):
-        tmp = table[i] == memory_last_time(tmp_memory, m, time)
-        if sum(tmp) == m:
-            return i
+    return np.argmax(np.sum(np.array(table) == memory, axis = 1))
 
-def forecast_strategy_full(population, table, memory, m, time):
+def forecast_strategy_full(population, table, memory):
     """
     Predicts the strategy given a memory of size m
     """
-    position = position_straegy(table, memory, m, time)
+    position = position_straegy(table, memory)
     return population[:, :, position]
 
-def score(population, table, memory, m, time):
+def score(population, table, memory):
     """
     Compute the score of a strategy with a memory.
     """
-    forecast = forecast_strategy_full(population, table, memory, m, time)
-    realization = memory[-time]
+    forecast = forecast_strategy_full(population, table, memory)
+    realization = memory
     tmp  = forecast == realization
-    return tmp.astype(int)
+    return True
 
-def evaluate_population(population, table, memory, m):
+def update_score(score_strategy, group_select, win_group, interaction, s):
     """
     Evaluate a population with a memory.
     """
-    scores = []
-    for i in range(1, m+1):
-        if len(scores) == 0:
-            scores = score(population, table, memory, m, time = i)
-        else:
-            scores = scores + score(population, table, memory, m, time = i)
-    return scores
+    tmp = group_select == win_group
+    score_strategy[:,interaction%s] = tmp.astype(int)
+    return score_strategy
 
-def select_strategy(m, memory, population, table):
-    tmp = evaluate_population(population, table, memory, m)
-    tmp = pd.DataFrame(tmp)
+def select_strategy(score_strategy):
+    tmp = pd.DataFrame(score_strategy)
     max_row = tmp.max(axis = 1)
     array_strategy = []
     for i_agent in range(len(max_row)):
@@ -109,12 +85,13 @@ def select_strategy(m, memory, population, table):
         array_strategy.append(i_strategy)
     return array_strategy
 
-def select_group(m, memory, population, table):
+
+def select_group(memory, population, table, score_strategy):
     """
     Select a group of strategies.
     """
-    strategy_select = select_strategy(m, memory, population, table)
-    sample_population = population[:, :, position_straegy(table, memory, m, time = 0)]
+    strategy_select = select_strategy(score_strategy)
+    sample_population = population[:, :, position_straegy(table, memory)]
     cols = np.arange(sample_population.shape[1])
     mask = np.array(strategy_select)[:, None] == cols
     return sample_population[mask]
@@ -143,16 +120,16 @@ def update_memory(memory, win_group, m):
     """
     Update the memory.
     """
-    return np.append(memory[-((m*2)-1):], win_group)
+    return np.append(memory[-((m)-1):], win_group)
 
 np.random.seed(20211130)
 N = 101
 m_max = 16
-s = 1
-n_interation = 1000
+s = 2
+n_interaction = 1000
 max_simulation = 40
 
-for m in range(10, m_max + 1):
+for m in range(1, m_max + 1):
     print("Memory: ", m)
     result = pd.DataFrame(columns=[
         'Simulation', 'Iteration', 'Population', 'LenMemory',
@@ -161,21 +138,23 @@ for m in range(10, m_max + 1):
 
     for simulation in range(max_simulation):
         print('Simulation: ', simulation)
-        memory = generete_memory(m)
+        memory = np.random.randint(2, size=m)
         population = generate_population(N, s, m)
         table = table_strategy(m)
-        puntuacion = np.zeros(N)
+        score_strategy = np.array(np.zeros((N, s)))
+        # puntuacion = np.zeros(N)
 
-        for interation in range(n_interation):
-            group_select = select_group(m, memory, population, table)
+        for interaction in range(n_interaction):
+            group_select = select_group(memory, population, table, score_strategy)
             win_group = group_minoritary(group_select)
-            puntuacion = update_puntuacion(win_group, puntuacion)
+            # puntuacion = update_puntuacion(win_group, puntuacion)
+            score_strategy = update_score(score_strategy, group_select, win_group, interaction, s)
             win_group, std_group_select, n_wins = summary_round(group_select)
             memory = update_memory(memory, win_group, m)
 
             result = result.append({
                 'Simulation': simulation+1,
-                'Iteration': interation+1,
+                'Iteration': interaction+1,
                 'Population': N,
                 'LenMemory': m,
                 'NumberStrategy': s,
@@ -187,12 +166,12 @@ for m in range(10, m_max + 1):
                 )
 
         result.to_csv(
-            './Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv',
+            './Result_CalculoEstrategia/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv',
             index=False)
-        pd.DataFrame(puntuacion).to_csv(
-            './Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv',
-            index=False)
+        # pd.DataFrame(puntuacion).to_csv(
+        #     './Result_CalculoEstrategia/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv',
+        #     index=False)
 
-    result.to_csv('./Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv', index=False)
-    pd.DataFrame(puntuacion).to_csv('./Result/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv', index=False)
-
+    result.to_csv('./Result_CalculoEstrategia/Minority_game_N_' + str(N) + '_m_' + str(m) + '_s_' + str(s) + '.csv', index=False)
+    # pd.DataFrame(puntuacion).to_csv('./Result_CalculoEstrategia/Minority_game_N_' + str(N) + 
+    # '_m_' + str(m) + '_s_' + str(s) + '_puntuation.csv', index=False)
