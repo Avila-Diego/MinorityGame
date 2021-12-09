@@ -8,13 +8,14 @@ library(ggplot2)
 # setwd("~/Documents/Tesis/Code/GameMinority/result_NuevasEstrategias")
 # setwd("~/Documents/Tesis/Code/GameMinority/result_RemplazoReglaM")
 # setwd("~/Downloads/Result/")
-setwd("~/Documents/Tesis/Code/GameMinority/Result_CalculoEstrategia/")
+setwd("~/Documents/Tesis/Code/GameMinority/Result_CalculoEstrategia/N_101_s_2/")
 
 files_puntuation <- list.files(pattern = "_puntuation")
 files_summary <- list.files(pattern = "\\d\\.csv")
 
 data_summmary <- NULL
 for (file in files_summary) {
+  print(file)
   tmp <- read_csv(file)
   tmp$file <- file
   data_summmary <- rbind(data_summmary, tmp)
@@ -26,7 +27,7 @@ gc()
 data_summmary$sum_ones <- ifelse(
   data_summmary$MinorityGroup == 1,
   data_summmary$n_wins,
-  101 - data_summmary$n_wins
+  data_summmary$Population - data_summmary$n_wins
 )
 
 # result <- data_summmary %>%
@@ -40,6 +41,7 @@ data_summmary$sum_ones <- ifelse(
 # plot(result$LenMemory, result$sd)
 
 result <- data_summmary %>%
+  # filter(Population == 11, NumberStrategy == 2) %>%
   select(LenMemory, Simulation, NumberStrategy, sum_ones) %>%
   group_by(LenMemory, Simulation, NumberStrategy) %>%
   summarize(
@@ -57,7 +59,7 @@ result <- data_summmary %>%
 #   ylim=c(0,15),
 # )
 
-result$Population <- 101
+result$Population <- mean(data_summmary$Population)
 result$sigma2_N <- result$sd^2 / result$Population
 result$z <- 2^result$LenMemory / result$Population
 
@@ -67,10 +69,10 @@ result$z <- 2^result$LenMemory / result$Population
 #   )
 
 
-img <- ggplot(filter(result, NumberStrategy == 2)) +
+img <- ggplot(result) +
   aes(x = LenMemory, y = sd) +
-  geom_point() +
-  coord_cartesian(xlim = c(0, 16), ylim = c(0, 15))
+  geom_point() # +
+  # coord_cartesian(xlim = c(0, 16), ylim = c(0, 15))
 
 # ggplot(filter(result, NumberStrategy == 1)) +
 #   aes(x = z, y = sigma2_N) +
