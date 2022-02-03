@@ -1,13 +1,20 @@
 rm(list = ls()); gc()
 
-setwd("~/Documents/Tesis/Code/GameMinority")
+setwd("~/Documents/Tesis/Code/Result_WhitReplace")
 
-# library(readr)
+library(readr)
 library(dplyr)
 library(ggplot2)
 
-data <- readRDS("../Result_out/0_Result_NetLogo_Merge.rds")
-data
+# data <- readRDS("../Result_out/0_Result_NetLogo_Merge.rds")
+data <- NULL
+files <- list.files()
+
+for (file in files) {
+  data_tmp <- read_csv(file)
+  data <- rbind(data, data_tmp)
+  data_tmp <- NULL; gc()
+}
 
 result <- data %>%
   filter(Population == 101, NumberStrategy == 2) %>%
@@ -253,3 +260,4 @@ Fig10 <- ggplot(result) +
   geom_smooth(method='lm')
 
 Fig10
+
